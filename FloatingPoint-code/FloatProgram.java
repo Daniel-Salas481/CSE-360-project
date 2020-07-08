@@ -4,6 +4,7 @@
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
 
@@ -18,6 +19,7 @@ public class FloatProgram extends Application
 		// create entire display
 		ControlPane rootPane = new ControlPane();
 		rootPane.setPadding(new Insets(10,10,10,10));
+		rootPane.setAlignment(Pos.TOP_CENTER);
 		// create scene
 		Scene scene = new Scene(rootPane, WIDTH, HEIGHT);
 		// set and display stage parameters
