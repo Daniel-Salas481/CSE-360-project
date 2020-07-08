@@ -4,6 +4,9 @@
 import java.io.*;
 import java.text.DecimalFormat;
 
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+
 public class Floats 
 {
 	public Float[] array; // array of the float values
@@ -14,9 +17,16 @@ public class Floats
 	}
 	public void open(String fileName)
 	{
+		// check to see if the file is a text file
+		if(!fileName.endsWith(".txt"))
+		{
+			Alert alert = new Alert(Alert.AlertType.ERROR, "The file \""+ fileName +"\" is not a text file.", ButtonType.CLOSE);
+			alert.showAndWait();
+			return; // no need to open.
+		}
 		try 
 		{
-			File file = new File(fileName); 
+			File file = new File(fileName);
 			BufferedReader reader = new BufferedReader(new FileReader(file));
 			String line; 
 			while ((line = reader.readLine()) != null)
@@ -35,10 +45,14 @@ public class Floats
 		catch (FileNotFoundException e)
 		{
 			System.out.println("File not found.");
+			Alert alert = new Alert(Alert.AlertType.ERROR, "The Text file \""+ fileName +"\" could not be found.", ButtonType.CLOSE);
+			alert.showAndWait();
 		}
 		catch (IOException e)
 		{
 			System.out.println("Error reading floats in file.");
+			Alert alert = new Alert(Alert.AlertType.ERROR, "Something went wrong while trying to read the file.", ButtonType.CLOSE);
+			alert.showAndWait();
 		}
 		
 		
@@ -60,7 +74,10 @@ public class Floats
 		for (int k = 0; k < array.length; k++)
 		{
 			if (Math.abs(array[k] - f) < .0000000001f)
+			{
 				index = k;
+				break;
+			}
 		}
 		if (index != -1)
 		{
@@ -74,25 +91,80 @@ public class Floats
 			{
 				array[k] = old[k + 1]; // skips index i and continues
 			}
+		} else
+		{
+			/*
+			 * The index could not be found, display an error
+			 */
+			Alert alert = new Alert(Alert.AlertType.ERROR, "The number \""+ f +"\" could not be found.", ButtonType.CLOSE);
+			alert.showAndWait();
 		}
 	}
 	public void save(String fileName)
 	{
+		// check to see if the file is a text file
+		if(!fileName.endsWith(".txt"))
+		{
+			Alert alert = new Alert(Alert.AlertType.ERROR, "The file \""+ fileName +"\" is not a text file.", ButtonType.CLOSE);
+			alert.showAndWait();
+			return; // no need to open.
+		}
 		try 
 		{
+			File f = new File(fileName);
+			if(f.exists())
+			{
+				Alert alert = new Alert(Alert.AlertType.WARNING, "The file \""+ fileName +"\" is being overwritten.", ButtonType.OK);
+				alert.showAndWait();
+			}
+			
 			FileWriter file = new FileWriter(fileName);
 			BufferedWriter output = new BufferedWriter(file);
 			DecimalFormat df = new DecimalFormat();
 			df.setMaximumFractionDigits(6);
 			df.setMinimumFractionDigits(6);
-			for (int k = 0; k < array.length; k++)
+			df.setMinimumIntegerDigits(7);
+			
+			if (ControlPane.ord.getValue() == "Ascend")
 			{
-				output.write(df.format(array[k]));
-				if (k > 0 && (k + 1) % Integer.parseInt(ControlPane.col.getValue()) == 0 )
-					output.write("\n");
-				else 
-					output.write(" ");
+				FloatProgram.f.ascend(0, FloatProgram.f.array.length - 1);
+			}
+			else
+			{
+				FloatProgram.f.descend(0, FloatProgram.f.array.length - 1);
+			}
+			
+			if (ControlPane.hv.getValue() == "Horizontal")
+			{
+				for (int k = 0; k < array.length; k++)
+				{
+					output.write(df.format(array[k]));
+					if ((k + 1) % ControlPane.columns == 0 )
+						output.write("\n");
+					else 
+						output.write(" | ");
+						
+				}
+			} else
+			{
+				int rows = FloatProgram.f.array.length/ControlPane.columns;
+				if (FloatProgram.f.array.length % ControlPane.columns != 0)
+					rows++;
+				int index = 0;
+				int count = 0;
+				while(count < rows)
+				{
+					output.write(df.format(array[index]));
 					
+					index = (index + rows);
+					if(index >= array.length)
+					{
+						count++;
+						index = count;
+						output.write("\n");
+					} else 
+						output.write(" | ");
+				}
 			}
 			output.close(); // close writer
 			
@@ -100,6 +172,8 @@ public class Floats
 		catch (Exception e)
 		{
 			System.err.println("Error: " + e.getMessage());
+			Alert alert = new Alert(Alert.AlertType.ERROR, "Something went wrong while trying to write the output file.", ButtonType.CLOSE);
+			alert.showAndWait();
 		}
 	}
     public void ascend(int low, int high) // used Quicksort algorithm
@@ -188,7 +262,7 @@ public class Floats
 			return null;
 		}
     }
-    public Float[] modes() // returns array of top 3 modes of the floats
+    public Float[][] modes() // returns array of top 3 modes of the floats
     {
     	// create a count of all the repetitions of floats
     	int[] count = new int[array.length];
@@ -201,41 +275,44 @@ public class Floats
         	}
     	}
     	
-    	Float[] modes = new Float[3]; 
+    	Float[][] modes = new Float[3][2]; 
     	// first mode
     	int c = count[0];
     	if (c != 0) // as long as the count isn't 0
-    		modes[0] = array[0];
+    		modes[0][0] = array[0];
     	for (int j = 1; j < count.length; j++)
     	{
     		if (count[j] > c)
     		{
     			c = count[j];
-    			modes[0] = array[j]; // update mode
+    			modes[0][0] = array[j]; // update mode
+    			modes[0][1] = (float) c;
     		}
     	}
     	// second mode
 		c = count[0];
 		if (c != 0) // as long as the count isn't 0
-    		modes[1] = array[0];
+    		modes[1][0] = array[0];
     	for (int j = 1; j < count.length; j++)
     	{
-    		if (count[j] > c && Math.abs(array[j] - modes[0]) > .00000001f) 
+    		if (count[j] > c && Math.abs(array[j] - modes[0][0]) > .00000001f) 
     		{
     			c = count[j];
-    			modes[1] = array[j]; // update mode
+    			modes[1][0] = array[j]; // update mode
+    			modes[1][1] = (float) c;
     		}
     	}
     	// third mode
     	c = count[0];
     	if (c != 0) // as long as the count isn't 0
-    		modes[2] = array[0];
+    		modes[2][0] = array[0];
     	for (int j = 1; j < count.length; j++)
     	{
-    		if (count[j] > c && Math.abs(array[j] - modes[0]) > .00000001f && Math.abs(array[j] - modes[1]) > .00000001f)
+    		if (count[j] > c && Math.abs(array[j] - modes[0][0]) > .00000001f && Math.abs(array[j] - modes[1][0]) > .00000001f)
     		{
     			c = count[j];
-    			modes[2] = array[j]; // update mode
+    			modes[2][0] = array[j]; // update mode
+    			modes[2][1] = (float) c;
     		}
     	}
     	
